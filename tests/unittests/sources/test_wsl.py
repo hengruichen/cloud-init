@@ -7,7 +7,7 @@
 import os
 from copy import deepcopy
 from email.mime.multipart import MIMEMultipart
-from typing import Optional, cast
+from typing import cast
 
 from cloudinit import helpers, util
 from cloudinit.sources import DataSourceWSL as wsl
