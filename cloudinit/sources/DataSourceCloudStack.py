@@ -299,16 +299,16 @@ def get_vr_address(distro=None):
     else:
         LOG.debug("Distro object is not defined, skipping leasefile search")
 
-    if not lease_file:
-        LOG.debug("No lease file found, using default gateway")
-        return get_default_gateway()
+    if lease_file:
+        latest_address = dhcp.IscDhclient.parse_dhcp_server_from_lease_file(
+            lease_file
+        )
+        if latest_address:
+            return latest_address
 
-    lease_file = dhcp.IscDhclient.parse_dhcp_server_from_lease_file(lease_file)
-    if not latest_address:
-        # No virtual router found, fallback on default gateway
-        LOG.debug("No DHCP found, using default gateway")
-        return get_default_gateway()
-    return latest_address
+    # No virtual router found, fallback to default gateway
+    LOG.debug("No DHCP found, using default gateway")
+    return get_default_gateway()
 
 
 # Used to match classes to dependencies
