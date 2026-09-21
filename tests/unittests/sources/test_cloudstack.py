@@ -246,6 +246,13 @@ class TestCloudStackHostname(CiTestCase):
 
         self.patches.enter_context(
             mock.patch(
+                "cloudinit.distros.net.find_fallback_nic",
+                return_value="eth0",
+            )
+        )
+
+        self.patches.enter_context(
+            mock.patch(
                 MOD_PATH
                 + ".dhcp.IscDhclient.get_newest_lease_file_from_distro",
                 return_value=True,
@@ -304,7 +311,7 @@ class TestCloudStackHostname(CiTestCase):
         )
 
         ds = DataSourceCloudStack(
-            {}, MockDistro(), helpers.Paths({"run_dir": self.tmp})
+            {}, ubuntu.Distro("", {}, {}), helpers.Paths({"run_dir": self.tmp})
         )
         ds._fallback_interface = "eth0"
         with mock.patch(MOD_PATH + ".util.load_file"):

@@ -372,20 +372,7 @@ class TestDHCPDiscoveryClean(CiTestCase):
     with_logs = True
     ib_address_prefix = "00:00:00:00:00:00:00:00:00:00:00:00"
 
-    @mock.patch("cloudinit.net.dhcp.find_fallback_nic")
-    def test_no_fallback_nic_found(self, m_fallback_nic):
-        """Log and do nothing when nic is absent and no fallback is found."""
-        m_fallback_nic.return_value = None  # No fallback nic found
-
-        with pytest.raises(NoDHCPLeaseInterfaceError):
-            maybe_perform_dhcp_discovery(MockDistro())
-
-        self.assertIn(
-            "Skip dhcp_discovery: Unable to find fallback nic.",
-            self.logs.getvalue(),
-        )
-
-    @mock.patch("cloudinit.net.dhcp.find_fallback_nic", return_value="eth9")
+    @mock.patch("cloudinit.distros.net.find_fallback_nic", return_value="eth9")
     @mock.patch("cloudinit.net.dhcp.os.remove")
     @mock.patch("cloudinit.net.dhcp.subp.subp")
     @mock.patch("cloudinit.net.dhcp.subp.which")
@@ -406,7 +393,7 @@ class TestDHCPDiscoveryClean(CiTestCase):
             self.logs.getvalue(),
         )
 
-    @mock.patch("cloudinit.net.dhcp.find_fallback_nic", return_value="eth9")
+    @mock.patch("cloudinit.distros.net.find_fallback_nic", return_value="eth9")
     @mock.patch("cloudinit.net.dhcp.os.remove")
     @mock.patch("cloudinit.net.dhcp.subp.subp")
     @mock.patch("cloudinit.net.dhcp.subp.which")
@@ -432,17 +419,6 @@ class TestDHCPDiscoveryClean(CiTestCase):
         )
         self.assertIn(
             "DHCP client not found: udhcpc",
-            self.logs.getvalue(),
-        )
-
-    @mock.patch("cloudinit.net.dhcp.find_fallback_nic", return_value=None)
-    def test_provided_nic_does_not_exist(self, m_fallback_nic):
-        """When the provided nic doesn't exist, log a message and no-op."""
-        with pytest.raises(NoDHCPLeaseInterfaceError):
-            maybe_perform_dhcp_discovery(MockDistro(), "idontexist")
-
-        self.assertIn(
-            "Skip dhcp_discovery: nic idontexist not found in get_devicelist.",
             self.logs.getvalue(),
         )
 

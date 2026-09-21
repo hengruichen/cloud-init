@@ -19,8 +19,6 @@ import configobj
 
 from cloudinit import subp, temp_utils, util
 from cloudinit.net import (
-    find_fallback_nic,
-    get_devicelist,
     get_ib_interface_hwaddr,
     get_interface_mac,
     is_ib_interface,
@@ -98,17 +96,8 @@ def maybe_perform_dhcp_discovery(distro, nic=None, dhcp_log_func=None):
         from the dhclient discovery if run, otherwise an empty list is
         returned.
     """
-    if nic is None:
-        nic = find_fallback_nic()
-        if nic is None:
-            LOG.debug("Skip dhcp_discovery: Unable to find fallback nic.")
-            raise NoDHCPLeaseInterfaceError()
-    elif nic not in get_devicelist():
-        LOG.debug(
-            "Skip dhcp_discovery: nic %s not found in get_devicelist.", nic
-        )
-        raise NoDHCPLeaseInterfaceError()
-    return distro.dhcp_client.dhcp_discovery(nic, dhcp_log_func, distro)
+    interface = nic or distro.fallback_interface
+    return distro.dhcp_client.dhcp_discovery(interface, dhcp_log_func, distro)
 
 
 def networkd_parse_lease(content):
@@ -185,7 +174,7 @@ class DhcpClient(abc.ABC):
     def parse_static_routes(routes: str) -> List[Tuple[str, str]]:
         return []
 
-    def get_newest_lease(self, distro) -> Dict[str, Any]:
+    def get_newest_lease(self, interface: str) -> Dict[str, Any]:
         return {}
 
 
@@ -218,15 +207,15 @@ class IscDhclient(DhcpClient):
             dhcp_leases.append(dict(lease_options))
         return dhcp_leases
 
-    def get_newest_lease(self, distro) -> Dict[str, Any]:
+    def get_newest_lease(self, interface: str) -> Dict[str, Any]:
         """Get the most recent lease from the ephemeral phase as a dict.
 
         Return a dict of dhcp options. The dict contains key value
         pairs from the most recent lease.
 
-        @param distro: a distro object - not used in this class, but required
-                       for function signature compatibility with other classes
-                       that require a distro object
+        @param interface: an interface string - not used in this class, but
+            required for function signature compatibility with other classes
+            that require a distro object
         @raises: InvalidDHCPLeaseFileError on empty or unparseable leasefile
             content.
         """
@@ -355,7 +344,7 @@ class IscDhclient(DhcpClient):
             )
         if dhcp_log_func is not None:
             dhcp_log_func(out, err)
-        lease = self.get_newest_lease(distro)
+        lease = self.get_newest_lease(interface)
         if lease:
             return lease
         raise InvalidDHCPLeaseFileError()
@@ -535,9 +524,6 @@ class IscDhclient(DhcpClient):
 class Dhcpcd(DhcpClient):
     client_name = "dhcpcd"
 
-    def __init__(self):
-        super().__init__()
-
     def dhcp_discovery(
         self,
         interface: str,
@@ -547,12 +533,12 @@ class Dhcpcd(DhcpClient):
         """Run dhcpcd on the interface without scripts/filesystem artifacts.
 
         @param interface: Name of the network interface on which to send a
-                          dhcp request
+            dhcp request
         @param dhcp_log_func: A callable accepting the client output and
-                              error streams.
+            error streams.
         @param distro: a distro object for network interface manipulation
         @return: dict of lease options representing the most recent dhcp lease
-                 parsed from the dhclient.lease file
+            parsed from the dhclient.lease file
         """
         LOG.debug("Performing a dhcp discovery on %s", interface)
 
@@ -580,7 +566,7 @@ class Dhcpcd(DhcpClient):
             )
             if dhcp_log_func is not None:
                 dhcp_log_func(out, err)
-            lease = self.get_newest_lease(distro)
+            lease = self.get_newest_lease(interface)
             if lease:
                 return lease
             raise NoDHCPLeaseError("No lease found")
@@ -644,12 +630,10 @@ class Dhcpcd(DhcpClient):
         # for compatibility we still expect a list of leases
         return lease
 
-    def get_newest_lease(self, distro) -> Dict[str, Any]:
-        """Return a lease
+    def get_newest_lease(self, interface: str) -> Dict[str, Any]:
+        """Return a dict of dhcp options.
 
-        Return a list of dicts of dhcp options. Each dict contains key value
-        pairs a specific lease in order from oldest to newest.
-
+        @param interface: which interface to dump the lease from
         @raises: InvalidDHCPLeaseFileError on empty or unparseable leasefile
             content.
         """
@@ -659,11 +643,11 @@ class Dhcpcd(DhcpClient):
                     [
                         "dhcpcd",
                         "--dumplease",
-                        distro.fallback_interface,
+                        interface,
                     ],
                     rcs=[0, 1],
                 ).stdout,
-                distro.fallback_interface,
+                interface,
             )
 
         except subp.ProcessExecutionError as error:
@@ -781,17 +765,17 @@ class Udhcpc(DhcpClient):
         if dhcp_log_func is not None:
             dhcp_log_func(out, err)
 
-        return self.get_newest_lease(distro)
+        return self.get_newest_lease(interface)
 
-    def get_newest_lease(self, distro) -> Dict[str, Any]:
+    def get_newest_lease(self, interface: str) -> Dict[str, Any]:
         """Get the most recent lease from the ephemeral phase as a dict.
 
         Return a dict of dhcp options. The dict contains key value
         pairs from the most recent lease.
 
-        @param distro: a distro object - not used in this class, but required
-                       for function signature compatibility with other classes
-                       that require a distro object
+        @param interface: an interface name - not used in this class, but
+            required for function signature compatibility with other classes
+            that require a distro object
         @raises: InvalidDHCPLeaseFileError on empty or unparseable leasefile
             content.
         """

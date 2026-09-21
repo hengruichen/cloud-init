@@ -170,6 +170,7 @@ class Distro(persistence.CloudInitPickleMixin, metaclass=abc.ABCMeta):
         self._runner = helpers.Runners(paths)
         self.package_managers: List[PackageManager] = []
         self._dhcp_client = None
+        self._fallback_interface = None
 
     def _unpickle(self, ci_pkl_version: int) -> None:
         """Perform deserialization fixes for Distro."""
@@ -1273,6 +1274,13 @@ class Distro(persistence.CloudInitPickleMixin, metaclass=abc.ABCMeta):
             "-sf",
             "/bin/true",
         ] + (["-cf", config_file, interface] if config_file else [interface])
+
+    @property
+    def fallback_interface(self):
+        """Determine the network interface used during local network config."""
+        if self._fallback_interface is None:
+            self._fallback_interface = net.find_fallback_nic()
+        return self._fallback_interface
 
 
 def _apply_hostname_transformations_to_url(url: str, transformations: list):
