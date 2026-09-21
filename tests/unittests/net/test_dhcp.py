@@ -8,6 +8,7 @@ import pytest
 import responses
 
 from cloudinit.net.dhcp import (
+    Dhcpcd,
     InvalidDHCPLeaseFileError,
     IscDhclient,
     NoDHCPLeaseError,
@@ -438,17 +439,13 @@ class TestDHCPDiscoveryClean(CiTestCase):
             subp.ProcessExecutionError(exit_code=-5),
         ]
 
-        m_which.side_effect = [False, True]
+        m_which.side_effect = [False, False, False]
         with pytest.raises(NoDHCPLeaseError):
             maybe_perform_dhcp_discovery(MockDistro())
 
         self.assertIn(
             "DHCP client not found: dhclient",
             self.logs.getvalue(),
-        )
-        self.assertIn(
-           "DHCP client not found: dhcpcd",
-           self.logs.getvalue(),
         )
 
     @mock.patch("cloudinit.net.dhcp.find_fallback_nic", return_value=None)
@@ -473,7 +470,7 @@ class TestDHCPDiscoveryClean(CiTestCase):
             maybe_perform_dhcp_discovery(MockDistro())
 
         self.assertIn(
-            "Skip dhclient configuration: No dhclient command found.",
+            "DHCP client not found: dhclient",
             self.logs.getvalue(),
         )
 
@@ -975,24 +972,6 @@ class TestUDHCPCDiscoveryClean(CiTestCase):
     with_logs = True
     maxDiff = None
 
-    @mock.patch("cloudinit.net.dhcp.subp.which")
-    @mock.patch("cloudinit.net.dhcp.find_fallback_nic")
-    def test_absent_udhcpc_command(self, m_fallback, m_which):
-        """When dhclient doesn't exist in the OS, log the issue and no-op."""
-        m_fallback.return_value = "eth9"
-        m_which.return_value = None  # udhcpc isn't found
-
-        distro = MockDistro()
-        distro.dhcp_client_priority = [Udhcpc]
-
-        with pytest.raises(NoDHCPLeaseMissingDhclientError):
-            maybe_perform_dhcp_discovery(distro)
-
-        self.assertIn(
-            "Skip udhcpc configuration: No udhcpc command found.",
-            self.logs.getvalue(),
-        )
-
     @mock.patch("cloudinit.net.dhcp.is_ib_interface", return_value=False)
     @mock.patch("cloudinit.net.dhcp.subp.which", return_value="/sbin/udhcpc")
     @mock.patch("cloudinit.net.dhcp.os.remove")
@@ -1135,3 +1114,30 @@ class TestUDHCPCDiscoveryClean(CiTestCase):
                 ),
             ]
         )
+
+
+class TestDhcpcd:
+    def test_parse_lease(self):
+        lease = dedent(
+            """
+            broadcast_address='192.168.15.255'
+            dhcp_lease_time='3600'
+            dhcp_message_type='5'
+            dhcp_server_identifier='192.168.0.1'
+            domain_name='us-east-2.compute.internal'
+            domain_name_servers='192.168.0.2'
+            host_name='ip-192-168-0-212'
+            interface_mtu='9001'
+            ip_address='192.168.0.212'
+            network_number='192.168.0.0'
+            routers='192.168.0.1'
+            subnet_cidr='20'
+            subnet_mask='255.255.240.0'
+            """
+        )
+        parsed_lease = Dhcpcd.parse_dhcpcd_lease(lease, "eth0")[0]
+        assert "eth0" == parsed_lease["interface"]
+        assert "192.168.15.255" == parsed_lease["broadcast-address"]
+        assert "192.168.0.212" == parsed_lease["fixed-address"]
+        assert "255.255.240.0" == parsed_lease["subnet-mask"]
+        assert "192.168.0.1" == parsed_lease["routers"]

@@ -175,6 +175,11 @@ class DhcpClient(abc.ABC):
     client_name = ""
     max_wait = 5
 
+    def __init__(self):
+        self.dhcp_client_path = subp.which(self.client_name)
+        if not self.dhcp_client_path:
+            raise NoDHCPLeaseMissingDhclientError()
+
     @classmethod
     def kill_dhcp_client(cls):
         subp.subp(["pkill", cls.client_name], rcs=[0, 1])
@@ -199,14 +204,6 @@ class DhcpClient(abc.ABC):
 
 class IscDhclient(DhcpClient):
     client_name = "dhclient"
-
-    def __init__(self):
-        self.dhclient_path = subp.which("dhclient")
-        if not self.dhclient_path:
-            LOG.debug(
-                "Skip dhclient configuration: No dhclient command found."
-            )
-            raise NoDHCPLeaseMissingDhclientError()
 
     @staticmethod
     def parse_dhcp_lease_file(lease_file: str) -> List[Dict[str, Any]]:
@@ -298,7 +295,7 @@ class IscDhclient(DhcpClient):
         try:
             out, err = subp.subp(
                 distro.build_dhclient_cmd(
-                    self.dhclient_path,
+                    self.dhcp_client_path,
                     lease_file,
                     pid_file,
                     interface,
@@ -536,14 +533,6 @@ class IscDhclient(DhcpClient):
 class Dhcpcd:
     client_name = "dhcpcd"
 
-    def __init__(self):
-        self.dhclient_path = subp.which("dhcpcd")
-        if not self.dhclient_path:
-            LOG.debug(
-                "Skip dhclient configuration: No dhclient command found."
-            )
-            raise NoDHCPLeaseMissingDhclientError()
-
     def dhcp_discovery(
         self,
         interface,
@@ -572,9 +561,9 @@ class Dhcpcd:
         # /lib/dhcpcd/dhcpcd-hooks/ and pass each of those with the --nohook
         # argument to dhcpcd
         try:
-            out, err = subp.subp(
+            subp.subp(
                 [
-                    "dhcpcd",
+                    self.client_name,
                     "--oneshot",  # get lease then exit
                     "--nobackground",  # don't fork
                     "--ipv4only",  # only attempt configuring ipv4
@@ -584,6 +573,7 @@ class Dhcpcd:
                     interface,
                 ]
             )
+            return self.parse_dhcp_lease_file(interface)
         except subp.ProcessExecutionError as error:
             LOG.debug(
                 "dhclient exited with code: %s stderr: %r stdout: %r",
@@ -592,7 +582,6 @@ class Dhcpcd:
                 error.stdout,
             )
             raise NoDHCPLeaseError from error
-        return self.parse_dhcp_lease_file(interface)
 
     @staticmethod
     def parse_dhcpcd_lease(lease_dump: str, interface: str) -> List[dict]:
@@ -656,7 +645,7 @@ class Dhcpcd:
 
         except subp.ProcessExecutionError as error:
             LOG.debug(
-                "dhclient exited with code: %s stderr: %r stdout: %r",
+                "dhcpcd exited with code: %s stderr: %r stdout: %r",
                 error.exit_code,
                 error.stderr,
                 error.stdout,
@@ -666,12 +655,6 @@ class Dhcpcd:
 
 class Udhcpc(DhcpClient):
     client_name = "udhcpc"
-
-    def __init__(self):
-        self.udhcpc_path = subp.which("udhcpc")
-        if not self.udhcpc_path:
-            LOG.debug("Skip udhcpc configuration: No udhcpc command found.")
-            raise NoDHCPLeaseMissingUdhcpcError()
 
     def dhcp_discovery(
         self,
@@ -702,7 +685,7 @@ class Udhcpc(DhcpClient):
         util.write_file(udhcpc_script, UDHCPC_SCRIPT, 0o755)
 
         cmd = [
-            self.udhcpc_path,
+            self.dhcp_client_path,
             "-O",
             "staticroutes",
             "-i",
