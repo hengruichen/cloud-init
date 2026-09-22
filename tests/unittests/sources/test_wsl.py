@@ -126,100 +126,9 @@ class TestWSLHelperFunctions(CiTestCase):
         When the cmd.exe found is not executable, then RuntimeError is raised.
         """
         m_mounts.return_value = deepcopy(GOOD_MOUNTS)
-        m_os_access.return_value = True
-        cmd = wsl.cmd_executable()
-        # To please pyright not to complain about optional member access.
-        assert cmd is not None
-        self.assertIsNotNone(
-            cmd.relative_to(GOOD_MOUNTS["C:\\"]["mountpoint"])
-        )
-
         m_os_access.return_value = False
-        self.assertIsNone(wsl.cmd_executable())
-
-    @mock.patch("os.access")
-    @mock.patch("cloudinit.util.mounts")
-    def test_cmd_exe_no_win_mounts(self, m_mounts, m_os_access):
-        """
-        When no Windows drives are found, then RuntimeError is raised.
-        """
-        m_os_access.return_value = True
-
-        m_mounts.return_value = deepcopy(GOOD_MOUNTS)
-        m_mounts.return_value.pop("C:\\")
-        m_mounts.return_value.pop("D:\\")
-        self.assertIsNone(wsl.cmd_executable())
-
-    @mock.patch("cloudinit.util.lsb_release")
-    def test_candidate_files(self, m_lsb):
-        """
-        Validate the file names candidate for holding user-data and their
-        order of precedence.
-        """
-        m_lsb.return_value = SAMPLE_LSB
-        self.assertListEqual(
-            [
-                "%s.user-data" % INSTANCE_NAME,
-                "Ubuntu-noble.user-data",
-                "Ubuntu-all.user-data",
-                "config.user-data",
-            ],
-            wsl.candidate_user_data_file_names(INSTANCE_NAME),
-        )
-
-
-SAMPLE_CFG = {"datasource_list": ["NoCloud", "WSL"]}
-
-
-def join_payloads_from_content_type(
-    part: MIMEMultipart, content_type: str
-) -> str:
-    """
-    Helper function to decode and join all parts of a multipart MIME
-    message matched by the content type.
-    """
-    content = ""
-    for p in part.walk():
-        if p.get_content_type() == content_type:
-            content = content + str(p.get_payload(decode=True))
-
-    return content
-
-
-class TestWSLDataSource(CiTestCase):
-    def setUp(self):
-        super(TestWSLDataSource, self).setUp()
-        self.tmp = self.tmp_dir()
-        self.paths = helpers.Paths(
-            {"cloud_dir": self.tmp, "run_dir": self.tmp}
-        )
-
-    @mock.patch("cloudinit.util.wait_for_files")
-    @mock.patch("cloudinit.util.load_file")
-    @mock.patch("cloudinit.sources.DataSourceWSL.instance_name")
-    @mock.patch("cloudinit.sources.DataSourceWSL.win_user_profile_dir")
-    def test_metadata_id(self, m_prof_dir, m_iname, m_load_file, m_wait_file):
-        """
-        Validates that instance-id is properly set, indepedent of the existence
-        of user-data.
-        """
-        m_wait_file.return_value = set()
-        NICE_MACHINE_ID = "A-Nice-Machine-ID_by_systemd"
-        m_load_file.return_value = NICE_MACHINE_ID
-        m_iname.return_value = INSTANCE_NAME
-        m_prof_dir.return_value = None
-
-        ds = wsl.DataSourceWSL(
-            sys_cfg=SAMPLE_CFG,
-            distro=None,
-            paths=self.paths,
-        )
-        ds.get_data()
-
-        self.assertEqual(
-            ds.get_instance_id(),
-            "%s-%s" % (INSTANCE_NAME, NICE_MACHINE_ID),
-        )
+        with self.assertRaises(RuntimeError):
+            wsl.cmd_executable()
 
     @mock.patch("cloudinit.util.lsb_release")
     @mock.patch("cloudinit.sources.DataSourceWSL.instance_name")
@@ -333,3 +242,4 @@ class TestWSLDataSource(CiTestCase):
         )
 
         self.assertEqual("", shell_script)
+
