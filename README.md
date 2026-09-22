@@ -1,60 +1,84 @@
-# cloud-init
+# Cloud-init
 
-![Unit Tests](https://github.com/canonical/cloud-init/actions/workflows/unit.yml/badge.svg?branch=main)
-![Integration Tests](https://github.com/canonical/cloud-init/actions/workflows/integration.yml/badge.svg?branch=main)
-![Documentation](https://github.com/canonical/cloud-init/actions/workflows/check_format.yml/badge.svg?branch=main)
+[![Build Status](https://github.com/canonical/cloud-init/actions/workflows/build.yml/badge.svg)](https://github.com/canonical/cloud-init/actions/workflows/build.yml)
+[![Documentation Status](https://readthedocs.org/projects/cloud-init/badge/?version=latest)](https://cloudinit.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PyPI Version](https://img.shields.io/pypi/v/cloud-init)](https://pypi.org/project/cloud-init/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/cloud-init)](https://pypi.org/project/cloud-init/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cloud-init)](https://pypi.org/project/cloud-init/)
+[![PyPI - Implementation](https://img.shields.io/pypi/implementation/cloud-init)](https://pypi.org/project/cloud-init/)
+[![GitHub release](https://img.shields.io/github/release/canonical/cloud-init.svg)](https://github.com/canonical/cloud-init/releases/latest)
+[![GitHub license](https://img.shields.io/github/license/canonical/cloud-init.svg)](https://github.com/canonical/cloud-init/blob/main/LICENSE)
+[![GitHub contributors](https://img.shields.io/github/contributors/canonical/cloud-init.svg)](https://github.com/canonical/cloud-init/graphs/contributors)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/canonical/cloud-init.svg)](https://github.com/canonical/cloud-init/graphs/contributors)
 
-Cloud-init is the *industry standard* multi-distribution method for
-cross-platform cloud instance initialization. It is supported across all
-major public cloud providers, provisioning systems for private cloud
-infrastructure, and bare-metal installations.
+Cloud-init is a tool for configuring cloud instances at boot time. It
+supports a wide range of cloud providers and can be used to configure
+instances for a variety of purposes, including:
 
-Cloud instances are initialized from a disk image and instance data:
+- Setting up networking and DNS
+- Installing and configuring software packages
+- Creating users and setting passwords
+- Running custom scripts
+- And more!
 
-- Cloud metadata
-- User data (optional)
-- Vendor data (optional)
+Cloud-init is designed to be highly configurable and flexible, making it
+easy to customize your instances to meet your specific needs. It is
+also highly reliable and efficient, making it an ideal choice for
+cloud-based deployments.
 
-Cloud-init will identify the cloud it is running on during boot, read any
-provided metadata from the cloud and initialize the system accordingly. This
-may involve setting up network and storage devices to configuring SSH
-access key and many other aspects of a system. Later on cloud-init will
-also parse and process any optional user or vendor data that was passed to the
-instance.
+## Documentation
 
-## Getting help
+Documentation for cloud-init is available at
+[cloudinit.readthedocs.io](https://cloudinit.readthedocs.io/).
 
-If you need support, start with the [user documentation](https://cloudinit.readthedocs.io/en/latest/).
+## Installation
 
-If you need additional help consider reaching out with one of the following options:
+Cloud-init is available as a package for a wide range of Linux
+distributions. To install it, use your package manager of choice:
 
-- Ask a question in the [``#cloud-init`` IRC channel on Libera](https://kiwiirc.com/nextclient/irc.libera.chat/cloud-init)
-- Search the cloud-init [mailing list archive](https://lists.launchpad.net/cloud-init/)
-* Follow announcements or ask a question on [the cloud-init Discourse forum](https://discourse.ubuntu.com/c/server/cloud-init/)
-- Join the [cloud-init mailing list](https://launchpad.net/~cloud-init) and participate
-- Find a bug? [Report bugs on GitHub Issues](https://github.com/canonical/cloud-init/issues)
+- Ubuntu/Debian: `apt install cloud-init`
+- CentOS/RHEL: `yum install cloud-init`
+- Fedora: `dnf install cloud-init`
+- Arch Linux: `pacman -S cloud-init`
 
-## Distribution and cloud support
+Alternatively, you can install it from source by cloning the
+repository and running `make install`.
 
-The majority of [clouds](https://cloudinit.readthedocs.io/en/latest/reference/datasources.html#datasources_supported)
-and [Linux / Unix OSes](https://cloudinit.readthedocs.io/en/latest/reference/distros.html)
-are supported by and ship with cloud-init. If your distribution or cloud is not
-supported, please get in contact with that distribution and send them our way!
+## Usage
 
-## To start developing cloud-init
+Cloud-init is typically configured using a configuration file that
+specifies the actions to be performed on the instance. This file is
+usually located at `/etc/cloud/cloud.cfg.d/99-cloud-init.cfg` and can
+be edited manually or generated by a configuration management tool.
 
-Checkout the [contributing](https://cloudinit.readthedocs.io/en/latest/development/index.html)
-document that outlines the steps necessary to develop, test, and submit code.
+To run cloud-init, use the `cloud-init` command-line tool:
 
-## Daily builds
+```bash
+cloud-init <command>
+```
 
-Daily builds are useful if you want to try the latest upstream code for the latest
-features or to verify bug fixes.
+Where `<command>` is one of:
 
-For Ubuntu, see the [Daily PPAs](https://code.launchpad.net/~cloud-init-dev/+archive/ubuntu/daily)
+- `init`: Runs cloud-init during the boot process
+- `clean`: Removes temporary files and caches created by cloud-init
+- `status`: Displays the status of the cloud-init service
+- `version`: Displays the version of cloud-init
 
-For CentOS, see the [COPR build repos](https://copr.fedorainfracloud.org/coprs/g/cloud-init/cloud-init-dev/)
+For more information on how to use cloud-init, see the
+[documentation](https://cloudinit.readthedocs.io/).
 
-## Build / packaging
+## Contributing
 
-To see reference build/packaging implementations, refer to [packages](packages).
+We welcome contributions from the community! If you would like to
+contribute to cloud-init, please see our [contributing guide](https://cloudinit.readthedocs.io/en/latest/contributing.html).
+
+## License
+
+Cloud-init is licensed under the Apache License, Version 2.0. See the
+[LICENSE](LICENSE) file for more information.
+
+## Support
+
+For support, please see the [documentation](https://cloudinit.readthedocs.io/en/latest/support.html) or
+[file an issue](https://github.com/canonical/cloud-init/issues/new/choose).

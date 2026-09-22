@@ -117,90 +117,9 @@ class DataSourceCloudStack(sources.DataSource):
                 self.distro.dhclient_lease_file_regex,
             )
         if not lease_file:
-            LOG.debug("Dhclient lease file wasn't found")
-            return None
-
-        latest_lease = dhcp.IscDhclient.parse_dhcp_lease_file(lease_file)[-1]
-        domainname = latest_lease.get("domain-name", None)
-        return domainname if domainname else None
-
-    def get_hostname(
-        self,
-        fqdn=False,
-        resolve_ip=False,
-        metadata_only=False,
-    ):
-        """
-        Returns instance's hostname / fqdn
-        First probes the parent class method.
-
-        If fqdn is requested, and the parent method didn't return it,
-        then attach the domain-name from DHCP response.
-        """
-        hostname = super().get_hostname(fqdn, resolve_ip, metadata_only)
-        if fqdn and "." not in hostname.hostname:
-            LOG.debug("FQDN requested")
-            domainname = self._get_domainname()
-            if domainname:
-                fqdn = f"{hostname.hostname}.{domainname}"
-                LOG.debug("Obtained the following FQDN: %s", fqdn)
-                return sources.DataSourceHostname(fqdn, hostname.is_default)
-            LOG.debug(
-                "Could not determine domain name for FQDN. "
-                "Fall back to hostname as an FQDN: %s",
-                fqdn,
-            )
-        return hostname
-
-    def wait_for_metadata_service(self):
-        url_params = self.get_url_params()
-
-        if url_params.max_wait_seconds <= 0:
-            return False
-
-        urls = [
-            uhelp.combine_url(
-                self.metadata_address, "latest/meta-data/instance-id"
-            )
-        ]
-        start_time = time.time()
-        url, _response = uhelp.wait_for_url(
-            urls=urls,
-            max_wait=url_params.max_wait_seconds,
-            timeout=url_params.timeout_seconds,
-            status_cb=LOG.warning,
-        )
-
-        if url:
-            LOG.debug("Using metadata source: '%s'", url)
-        else:
-            LOG.critical(
-                "Giving up on waiting for the metadata from %s"
-                " after %s seconds",
-                urls,
-                int(time.time() - start_time),
-            )
-
-        return bool(url)
-
-    def get_config_obj(self):
-        return self.cfg
-
-    def _get_data(self):
-        seed_ret = {}
-        if util.read_optional_seed(seed_ret, base=(self.seed_dir + "/")):
-            self.userdata_raw = seed_ret["user-data"]
-            self.metadata = seed_ret["meta-data"]
-            LOG.debug("Using seeded cloudstack data from: %s", self.seed_dir)
-            return True
-        try:
-            if not self.wait_for_metadata_service():
-                return False
-            start_time = time.time()
-            self.userdata_raw = ec2.get_instance_userdata(
-                self.api_ver, self.metadata_address
-            )
-            self.metadata = ec2.get_instance_metadata(
+            LOG.debug("
+# ... [truncated] ...
+         self.metadata = ec2.get_instance_metadata(
                 self.api_ver, self.metadata_address
             )
             LOG.debug(
@@ -320,3 +239,4 @@ datasources = [
 # Return a list of data sources that match this set of dependencies
 def get_datasource_list(depends):
     return sources.list_from_depends(depends, datasources)
+
