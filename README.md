@@ -1,60 +1,67 @@
-# cloud-init
+# Cloud-Init
 
-![Unit Tests](https://github.com/canonical/cloud-init/actions/workflows/unit.yml/badge.svg?branch=main)
-![Integration Tests](https://github.com/canonical/cloud-init/actions/workflows/integration.yml/badge.svg?branch=main)
-![Documentation](https://github.com/canonical/cloud-init/actions/workflows/check_format.yml/badge.svg?branch=main)
+[![CI](https://github.com/cloud-init/cloud-init/actions/workflows/main.yml/badge.svg)](https:***REDACTED***@github.com:cloud-init/cloud-init.git
+```
 
-Cloud-init is the *industry standard* multi-distribution method for
-cross-platform cloud instance initialization. It is supported across all
-major public cloud providers, provisioning systems for private cloud
-infrastructure, and bare-metal installations.
+## Build
 
-Cloud instances are initialized from a disk image and instance data:
+To build the source code, run:
 
-- Cloud metadata
-- User data (optional)
-- Vendor data (optional)
+```bash
+make
+```
 
-Cloud-init will identify the cloud it is running on during boot, read any
-provided metadata from the cloud and initialize the system accordingly. This
-may involve setting up network and storage devices to configuring SSH
-access key and many other aspects of a system. Later on cloud-init will
-also parse and process any optional user or vendor data that was passed to the
-instance.
+This will build the `cloud-init` CLI and the `cloud-config` CLI.
 
-## Getting help
+The `cloud-init` CLI is located at `build/cloud-init`.
 
-If you need support, start with the [user documentation](https://cloudinit.readthedocs.io/en/latest/).
+The `cloud-config` CLI is located at `build/cloud-config`.
 
-If you need additional help consider reaching out with one of the following options:
+## Install
 
-- Ask a question in the [``#cloud-init`` IRC channel on Libera](https://kiwiirc.com/nextclient/irc.libera.chat/cloud-init)
-- Search the cloud-init [mailing list archive](https://lists.launchpad.net/cloud-init/)
-* Follow announcements or ask a question on [the cloud-init Discourse forum](https://discourse.ubuntu.com/c/server/cloud-init/)
-- Join the [cloud-init mailing list](https://launchpad.net/~cloud-init) and participate
-- Find a bug? [Report bugs on GitHub Issues](https://github.com/canonical/cloud-init/issues)
+To install the CLI, run:
 
-## Distribution and cloud support
+```bash
+sudo make install
+```
 
-The majority of [clouds](https://cloudinit.readthedocs.io/en/latest/reference/datasources.html#datasources_supported)
-and [Linux / Unix OSes](https://cloudinit.readthedocs.io/en/latest/reference/distros.html)
-are supported by and ship with cloud-init. If your distribution or cloud is not
-supported, please get in contact with that distribution and send them our way!
+This will install the `cloud-init` CLI and the `cloud-config` CLI.
 
-## To start developing cloud-init
+The `cloud-init` CLI is installed to `/usr/bin/cloud-init`.
 
-Checkout the [contributing](https://cloudinit.readthedocs.io/en/latest/development/index.html)
-document that outlines the steps necessary to develop, test, and submit code.
+The `cloud-config` CLI is installed to `/usr/bin/cloud-config`.
 
-## Daily builds
+## Run
 
-Daily builds are useful if you want to try the latest upstream code for the latest
-features or to verify bug fixes.
+To run the CLI, run:
 
-For Ubuntu, see the [Daily PPAs](https://code.launchpad.net/~cloud-init-dev/+archive/ubuntu/daily)
+```bash
+sudo cloud-init
+sudo cloud-config
+```
 
-For CentOS, see the [COPR build repos](https://copr.fedorainfracloud.org/coprs/g/cloud-init/cloud-init-dev/)
+## Documentation
 
-## Build / packaging
+The documentation is available at [docs.cloud-init.io](https://docs.cloud-init.io/).
 
-To see reference build/packaging implementations, refer to [packages](packages).
+## Contributing
+
+See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for information on how to
+contribute to this project.
+
+## License
+
+Copyright (c) 2007-2025 Canonical Ltd.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
